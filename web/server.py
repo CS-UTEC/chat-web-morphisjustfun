@@ -8,6 +8,11 @@ db = connector.Manager()
 engine = db.createEngine()
 
 app = Flask(__name__)
+
+@app.route('/',methods=['GET'])
+def index():
+    return redirect('static/html/index.html')
+
 @app.route('/login',methods=["POST"])
 def login():
     username = request.form.get('username')
