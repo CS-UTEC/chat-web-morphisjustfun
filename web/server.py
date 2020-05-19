@@ -32,7 +32,8 @@ def login():
 def static_content(content):
     return render_template(content)
 
-########### CRUD  users ###########
+########### CRUD  users ###########Gi
+
 # 1. CREATE
 @app.route('/users', methods = ['POST'])
 def create_users():
@@ -84,6 +85,15 @@ def delete_user(id):
     json_message = json.dumps(message, cls=connector.AlchemyEncoder)
     return Response(json_message, status = 201, mimetype='application/json')
 
+@app.route('/users/<id>', methods = ['GET'])
+def get_user(id):
+    db_session = db.getSession(engine)
+    users = db_session.query(entities.User).filter(entities.User.id == id)
+    for user in users:
+        js = json.dumps(user, cls=connector.AlchemyEncoder)
+        return  Response(js, status=200, mimetype='application/json')
+    message = { 'status': 404, 'message': 'Not Found'}
+    return Response(json.dumps(message), status=404, mimetype='application/json')
 
 
 if __name__ == '__main__':

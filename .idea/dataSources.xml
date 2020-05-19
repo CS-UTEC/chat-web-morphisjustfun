@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
+    <data-source source="LOCAL" name="chat" uuid="97386857-e050-453a-b325-69ade31081bc">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/web/chat.db</jdbc-url>
+    </data-source>
+    <data-source source="LOCAL" name="chat [2]" uuid="15c54e1d-7248-440d-a596-0d7366cf8a50">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/../tarea2-clienteservidor-morphisjustfun/web/chat.db</jdbc-url>
+    </data-source>
+  </component>
+</project>
