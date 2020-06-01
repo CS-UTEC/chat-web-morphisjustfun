@@ -20,15 +20,16 @@ def login():
     password = request.form.get('password')
     key = 'logged'
     if key in session and session[key] == [username,password]:
-        return "already logged" + " " + username
+        return redirect('static/html/chat.html')
     db_session = db.getSession(engine)
     respuesta = db_session.query(entities.User).filter(entities.User.username==username).filter(entities.User.password==password)
     users = respuesta[:]
+    idk = respuesta[0].id
     if len(users) > 0:
-        session[key] = [username,password]
-        return "login successful"
+        assign(key,[username,password])
+        assign('idk',idk)
+        return redirect('static/html/chat.html')
     return "login failed"
-
 
 
 @app.route('/static/<content>')
@@ -48,6 +49,8 @@ def create_users():
     message = {'msg': 'User created'}
     json_message = json.dumps(message, cls=connector.AlchemyEncoder)
     return Response(json_message, status=201, mimetype='application/json')
+
+
 #1.1 Create MEssages
 @app.route('/messages', methods = ['POST'])
 def create_message():
@@ -63,6 +66,22 @@ def create_message():
     session.commit()
     return Response('Message Created')
 
+#1.1 Create MEssages12
+@app.route('/messages/<user_to_id>', methods = ['POST'])
+def create_message2(user_to_id):
+    ida = str(session['idk'])
+    c = request.form.get('content')
+    message = entities.Message(
+        content = c,
+        sent_on = datetime.now(),
+        user_from_id = ida,
+        user_to_id = user_to_id
+    )
+    session2 = db.getSession(engine)
+    session2.add(message)
+    session2.commit()
+    return redirect('http://localhost:8080/static/html/chat.html')
+
 # 2. READ
 @app.route('/users', methods = ['GET'])
 def read_user():
@@ -71,6 +90,15 @@ def read_user():
     users = response[:]
     json_message = json.dumps(users, cls=connector.AlchemyEncoder)
     return Response(json_message, status=200 ,mimetype='application/json')
+
+@app.route('/current', methods = ['GET'])
+def current():
+    db_session = db.getSession(engine)
+    response = db_session.query(entities.User).filter(entities.User.id==session['idk'])
+    users = response[:]
+    json_message = json.dumps(users, cls=connector.AlchemyEncoder)
+    return Response(json_message, status=200 ,mimetype='application/json')
+
 # 2.1. READ M
 @app.route('/messages', methods = ['GET'])
 def read_message():
@@ -140,6 +168,26 @@ def get_user(id):
         return  Response(js, status=200, mimetype='application/json')
     message = { 'status': 404, 'message': 'Not Found'}
     return Response(json.dumps(message), status=404, mimetype='application/json')
+@app.route('/get_chat/<user_to_id>',methods=['GET'])
+def get_chat(user_to_id):
+    ida = str(session['idk'])
+    if ida!=user_to_id:
+        db_session = db.getSession(engine)
+        messages = db_session.query(entities.Message).filter(entities.Message.user_from_id == ida).filter(
+            entities.Message.user_to_id == user_to_id)
+        data = messages[:]
+        messages2 = db_session.query(entities.Message).filter(entities.Message.user_from_id == user_to_id).filter(
+            entities.Message.user_to_id == ida)
+        data2 = messages2[:]
+        data = data + data2
+        return Response(json.dumps(data, cls=connector.AlchemyEncoder), mimetype='application/json')
+    else:
+        db_session = db.getSession(engine)
+        messages = db_session.query(entities.Message).filter(entities.Message.user_from_id == ida).filter(
+            entities.Message.user_to_id == user_to_id)
+        data = messages[:]
+        return Response(json.dumps(data, cls=connector.AlchemyEncoder), mimetype='application/json')
+
 @app.route('/messages/<id>',methods=['GET'])
 def get_message(id):
     db_session = db.getSession(engine)
@@ -149,6 +197,11 @@ def get_message(id):
         return Response(js,status=200,mimetype='application/json')
     message = {'status':404,'message':'Not Found'}
     return Response(message,status=404,mimetype='application/json')
+
+
+
+def assign(key,value):
+    session[key] = value
 
 if __name__ == '__main__':
     app.secret_key = ".."
