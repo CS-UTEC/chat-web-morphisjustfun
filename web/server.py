@@ -9,6 +9,8 @@ db = connector.Manager()
 engine = db.createEngine()
 
 app = Flask(__name__)
+cache = {}
+key_users = 'keyuser'
 
 @app.route('/',methods=['GET'])
 def index():
@@ -28,7 +30,9 @@ def login():
     if len(users) > 0:
         assign(key,[username,password])
         assign('idk',idk)
+        db_session.close()
         return redirect('static/html/chat.html')
+    db_session.close()
     return "login failed"
 
 
@@ -48,6 +52,7 @@ def create_users():
     db_session.commit()
     message = {'msg': 'User created'}
     json_message = json.dumps(message, cls=connector.AlchemyEncoder)
+    db_session.close()
     return Response(json_message, status=201, mimetype='application/json')
 
 
@@ -85,9 +90,17 @@ def create_message2(user_to_id):
 # 2. READ
 @app.route('/users', methods = ['GET'])
 def read_user():
-    db_session = db.getSession(engine)
-    response = db_session.query(entities.User)
-    users = response[:]
+    users = []
+    if key_users in cache and (datetime.now()-cache[key_users]['datetime']).total_seconds() < 10:
+        users = cache[key_users]['data']
+    else:
+        db_session = db.getSession(engine)
+        response = db_session.query(entities.User)
+        users = response[:]
+        now = datetime.now()
+        cache[key_users] = {'data':users,'datetime':now}
+        db_session.close()
+        print("Using db")
     json_message = json.dumps(users, cls=connector.AlchemyEncoder)
     return Response(json_message, status=200 ,mimetype='application/json')
 
@@ -97,6 +110,7 @@ def current():
     response = db_session.query(entities.User).filter(entities.User.id==session['idk'])
     users = response[:]
     json_message = json.dumps(users, cls=connector.AlchemyEncoder)
+    db_session.close()
     return Response(json_message, status=200 ,mimetype='application/json')
 
 # 2.1. READ M
@@ -106,6 +120,7 @@ def read_message():
     response = db_session.query(entities.Message)
     messages = response[:]
     json_message = json.dumps(messages, cls=connector.AlchemyEncoder)
+    db_session.close()
     return Response(json_message, status=200 ,mimetype='application/json')
 
 #3. UPADATE
@@ -124,6 +139,7 @@ def update_user(id):
     #responde al cliente
     message = {'msg': 'User update'}
     json_message = json.dumps(message, cls=connector.AlchemyEncoder)
+    db_session.close()
     return Response(json_message, status = 201, mimetype='application/json')
 @app.route('/messages',methods=['PUT'])
 def update_message():
@@ -147,10 +163,12 @@ def delete_user(id):
     #responde al cliente
     message = {'msg': 'User Deleted'}
     json_message = json.dumps(message, cls=connector.AlchemyEncoder)
+    db_session.close()
     return Response(json_message, status = 201, mimetype='application/json')
 
 @app.route('/messages',methods=['DELETE'])
 def delete_message():
+
     id = request.form['key']
     session = db.getSession(engine)
     message = session.query(entities.Message).filter(entities.Message.id==id).one()
@@ -167,6 +185,7 @@ def get_user(id):
         js = json.dumps(user, cls=connector.AlchemyEncoder)
         return  Response(js, status=200, mimetype='application/json')
     message = { 'status': 404, 'message': 'Not Found'}
+    db_session.close()
     return Response(json.dumps(message), status=404, mimetype='application/json')
 @app.route('/get_chat/<user_to_id>',methods=['GET'])
 def get_chat(user_to_id):
@@ -180,25 +199,34 @@ def get_chat(user_to_id):
             entities.Message.user_to_id == ida)
         data2 = messages2[:]
         data = data + data2
+        db_session.close()
         return Response(json.dumps(data, cls=connector.AlchemyEncoder), mimetype='application/json')
     else:
         db_session = db.getSession(engine)
         messages = db_session.query(entities.Message).filter(entities.Message.user_from_id == ida).filter(
             entities.Message.user_to_id == user_to_id)
         data = messages[:]
+        db_session.close()
         return Response(json.dumps(data, cls=connector.AlchemyEncoder), mimetype='application/json')
 
 @app.route('/messages/<id>',methods=['GET'])
 def get_message(id):
+
+
     db_session = db.getSession(engine)
     messages = db_session.query(entities.Message).filter(entities.Message.id==id)
     for message in messages:
         js = json.dumps(message,cls=connector.AlchemyEncoder)
         return Response(js,status=200,mimetype='application/json')
     message = {'status':404,'message':'Not Found'}
+    db_session.close()
     return Response(message,status=404,mimetype='application/json')
 
-
+@app.route('/logout',methods=['GET'])
+def logout():
+    del session['logged']
+    del session['idk']
+    return redirect('/')
 
 def assign(key,value):
     session[key] = value
