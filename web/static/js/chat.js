@@ -1,6 +1,5 @@
 let na;
 
-
 function get_all_users(){
     $('#user').empty();
     $.getJSON("/current",function(data){

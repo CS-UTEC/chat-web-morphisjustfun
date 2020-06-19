@@ -27,7 +27,6 @@ function getMessagesDevEx(){
             showPageSizeSelector: true,
             allowedPageSizes: [8, 12, 20]
         },
-
         columns: [{
             dataField: "id",
             dataType: "number",
@@ -44,9 +43,6 @@ function getMessagesDevEx(){
                     dataSource: DevExpress.data.AspNet.createStore({
                     key: "id",      
                     loadUrl: url_users,
-                    insertUrl:url_users,
-                    updateUrl:url_users,
-                    deleteUrl:url_users,
                     onBeforeSend: function(method, ajaxOptions){
                         ajaxOptions.xhrFields = {withCredentials:true};
                     }
@@ -60,9 +56,6 @@ function getMessagesDevEx(){
                     dataSource: DevExpress.data.AspNet.createStore({
                     key: "id",      
                     loadUrl: url_users,
-                    insertUrl:url_users,
-                    updateUrl:url_users,
-                    deleteUrl:url_users,
                     onBeforeSend: function(method, ajaxOptions){
                         ajaxOptions.xhrFields = {withCredentials:true};
                     }
@@ -73,7 +66,4 @@ function getMessagesDevEx(){
         }],
 
     }).dxDataGrid("instance");
-
-
-
 }
